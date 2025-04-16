@@ -16,11 +16,8 @@ class CategoryTest extends TestCase
     public function test_category_can_be_created(): void
     {
         $category = Category::create(['name' => 'Tech']);
-
         $this->assertDatabaseHas('categories', [
             'name' => 'Tech'
         ]);
-
-        $this->assertTrue(true);
     }
 }
