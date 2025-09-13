@@ -47,10 +47,10 @@ jobs:
         echo "DB_USERNAME=root" >> .env
         echo "DB_PASSWORD=root" >> .env
 
-    - name: Test DB Connection
-      run: |
-        apt-get update && apt-get install -y default-mysql-client
-        mysql -hmysql -uroot -proot -e "SHOW DATABASES;"
+    # - name: Test DB Connection
+    #   run: |
+    #     apt-get update && apt-get install -y default-mysql-client
+    #     mysql -hmysql -uroot -proot -e "SHOW DATABASES;"
 
     - name: Run Migrations
       run: php artisan migrate --force
