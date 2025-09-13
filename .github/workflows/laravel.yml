@@ -43,15 +43,10 @@ jobs:
 
       # Step 4: Prepare Laravel environment
       - name: Prepare environment file
+        - name: Prepare environment file
         run: |
           cp .env.example .env
           php artisan key:generate
-          echo "DB_CONNECTION=mysql" >> .env
-          echo "DB_HOST=mysql" >> .env
-          echo "DB_PORT=3306" >> .env
-          echo "DB_DATABASE=laravel" >> .env
-          echo "DB_USERNAME=root" >> .env
-          echo "DB_PASSWORD=root" >> .env
 
       # Step 5: Wait until MySQL is ready
       - name: Wait for MySQL
