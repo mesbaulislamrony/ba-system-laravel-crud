@@ -22,14 +22,12 @@ jobs:
           --health-cmd="mysqladmin ping -h localhost -uroot -proot"
           --health-interval=10s
           --health-timeout=5s
-          --health-retries=5
+          --health-retries=10
 
     steps:
-      # Step 1: Checkout project
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Step 2: Setup PHP
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
@@ -37,32 +35,33 @@ jobs:
           extensions: mbstring, bcmath, pdo, pdo_mysql
           coverage: none
 
-      # Step 3: Install dependencies
-      - name: Install composer dependencies
+      - name: Install dependencies
         run: composer install --no-progress --prefer-dist --optimize-autoloader
 
-      # Step 4: Prepare Laravel environment
-      - name: Prepare environment file
+      - name: Setup .env file
         run: |
           cp .env.example .env
           php artisan key:generate
+          # force correct DB config
+          sed -i 's/DB_HOST=.*/DB_HOST=mysql/' .env
+          sed -i 's/DB_DATABASE=.*/DB_DATABASE=laravel/' .env
+          sed -i 's/DB_USERNAME=.*/DB_USERNAME=root/' .env
+          sed -i 's/DB_PASSWORD=.*/DB_PASSWORD=root/' .env
 
-      # Step 5: Wait until MySQL is ready
-      - name: Wait for MySQL
+      - name: Verify DB connection
         run: |
+          sudo apt-get update && sudo apt-get install -y default-mysql-client
           for i in {1..30}; do
-            if mysqladmin ping -hmysql -uroot -proot --silent; then
-              echo "MySQL is up!"
+            if mysql -hmysql -uroot -proot -e "SHOW DATABASES;" > /dev/null 2>&1; then
+              echo "✅ MySQL is ready!"
               break
             fi
-            echo "Waiting for database connection..."
+            echo "⏳ Waiting for MySQL..."
             sleep 5
           done
 
-      # Step 6: Run database migrations
       - name: Run migrations
         run: php artisan migrate --force
 
-      # Step 7: Run PHPUnit tests
       - name: Run tests
         run: php artisan test
