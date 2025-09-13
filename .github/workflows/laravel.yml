@@ -18,10 +18,10 @@ jobs:
           MYSQL_DATABASE: laravel
         ports: ['3306:3306']
         options: >-
-          --health-cmd="mysqladmin ping --silent"
+          --health-cmd="mysqladmin ping -h localhost -uroot -proot"
           --health-interval=10s
           --health-timeout=5s
-          --health-retries=3
+          --health-retries=5
 
     steps:
     - name: Checkout code
@@ -46,16 +46,9 @@ jobs:
         echo "DB_DATABASE=laravel" >> .env
         echo "DB_USERNAME=root" >> .env
         echo "DB_PASSWORD=root" >> .env
-        
-    - name: Wait for MySQL
-      run: |
-        until mysqladmin ping -h"mysql" -uroot -proot --silent; do
-          echo "Waiting for database connection..."
-          sleep 5
-        done
 
     - name: Run Migrations
-      run: php artisan migrate --force
+      run: php artisan migrate --force --retry=5
 
     - name: Run Tests
       run: php artisan test
