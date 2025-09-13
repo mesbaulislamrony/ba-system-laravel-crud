@@ -16,7 +16,8 @@ jobs:
         env:
           MYSQL_ROOT_PASSWORD: root
           MYSQL_DATABASE: laravel
-        ports: ['3306:3306']
+        ports:
+          - 3306:3306
         options: >-
           --health-cmd="mysqladmin ping -h localhost -uroot -proot"
           --health-interval=10s
@@ -24,36 +25,50 @@ jobs:
           --health-retries=5
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      # Step 1: Checkout project
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Setup PHP
-      uses: shivammathur/setup-php@v2
-      with:
-        php-version: '8.2'
-        extensions: mbstring, intl, bcmath, pdo_mysql
+      # Step 2: Setup PHP
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, bcmath, pdo, pdo_mysql
+          coverage: none
 
-    - name: Install Composer dependencies
-      run: composer install --prefer-dist --no-progress --no-suggest
+      # Step 3: Install dependencies
+      - name: Install composer dependencies
+        run: composer install --no-progress --prefer-dist --optimize-autoloader
 
-    - name: Copy .env
-      run: |
-        cp .env.example .env
-        php artisan key:generate
-        echo "DB_CONNECTION=mysql" >> .env
-        echo "DB_HOST=mysql" >> .env
-        echo "DB_PORT=3306" >> .env
-        echo "DB_DATABASE=laravel" >> .env
-        echo "DB_USERNAME=root" >> .env
-        echo "DB_PASSWORD=root" >> .env
+      # Step 4: Prepare Laravel environment
+      - name: Prepare environment file
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          echo "DB_CONNECTION=mysql" >> .env
+          echo "DB_HOST=mysql" >> .env
+          echo "DB_PORT=3306" >> .env
+          echo "DB_DATABASE=laravel" >> .env
+          echo "DB_USERNAME=root" >> .env
+          echo "DB_PASSWORD=root" >> .env
 
-    # - name: Test DB Connection
-    #   run: |
-    #     apt-get update && apt-get install -y default-mysql-client
-    #     mysql -hmysql -uroot -proot -e "SHOW DATABASES;"
+      # Step 5: Wait until MySQL is ready
+      - name: Wait for MySQL
+        run: |
+          for i in {1..30}; do
+            if mysqladmin ping -hmysql -uroot -proot --silent; then
+              echo "MySQL is up!"
+              break
+            fi
+            echo "Waiting for database connection..."
+            sleep 5
+          done
 
-    - name: Run Migrations
-      run: php artisan migrate --force
+      # Step 6: Run database migrations
+      - name: Run migrations
+        run: php artisan migrate --force
 
-    - name: Run Tests
-      run: php artisan test
+      # Step 7: Run PHPUnit tests
+      - name: Run tests
+        run: php artisan test
