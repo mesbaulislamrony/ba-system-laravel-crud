@@ -48,7 +48,7 @@ jobs:
         echo "DB_PASSWORD=root" >> .env
 
     - name: Run Migrations
-      run: php artisan migrate --force --retry=5
+      run: php artisan migrate --force
 
     - name: Run Tests
       run: php artisan test
